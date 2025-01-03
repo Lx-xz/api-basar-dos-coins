@@ -31,4 +31,5 @@ model Shopping {
   quantity Int
   value    Float  @default(0)
   status   String
+  date     DateTime @default("2021-08-01T00:00:00.000Z")
 }

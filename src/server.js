@@ -65,10 +65,11 @@ app.post('/shopping/register', async (req,res) => {
 
             let shopping = await prisma.shopping.create({
                 data: {
-                    quantity: req.body.purchase.quantity,
                     platform: 'PC',
-                    status: 'success',
+                    quantity: req.body.purchase.quantity,
                     value: value,
+                    status: 'success',
+                    date: new Date(),
         
                     buyer: {
                         connect: {
@@ -132,6 +133,7 @@ app.get('/admin', async (req,res) => {
             platform: true,
             status: true,
             value: true,
+            date: true,
             buyer: {
                 select: {
                     id: true,
