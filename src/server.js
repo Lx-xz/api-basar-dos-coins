@@ -170,6 +170,51 @@ app.post('/user', async (req,res) => {
     }
 })
 
+app.get('/user/:id', async (req,res) => {
+    try {
+        let user = await prisma.user.findUnique({
+            where: {
+                id: req.params.id
+            },
+            select: {
+                nick: true,
+                shopping: {
+                    select: {
+                        id: true,
+                        quantity: true,
+                        platform: true,
+                        value: true,
+                        date: true
+                    }
+                }
+            }
+        })
+
+        res.json(user)
+    }
+    catch {
+        res.status(500).send()
+    }
+})
+
+app.put('/user/:id', async (req,res) => {
+    try {
+        await prisma.user.update({
+            where: {
+                id: req.params.id
+            },
+            data: {
+                nick: req.body.nick
+            }
+        })
+
+        res.status(200).send()
+    }
+    catch {
+        res.status(500).send()
+    }
+})
+
 app.post('/user/login', async (req,res) => {
     let user = await prisma.user.findUnique({
         where: { 
