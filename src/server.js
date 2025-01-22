@@ -8,44 +8,35 @@ app.use(cors())
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
-import Stripe from 'stripe'
 import bcrypt from 'bcrypt'
+import { MercadoPagoConfig, Preference } from 'mercadopago'
 
 const server_url = process.env.SERVER_URL
-const stripe_secret = process.env.STRIPE_SECRET_KEY
+const access_token = process.env.ACCESS_TOKEN
 
-app.post('/shopping', async (req,res) => {
-    const stripe = new Stripe(stripe_secret)
+app.post('/shopping', (req,res) => {
+    const client = new MercadoPagoConfig({ accessToken: access_token })
 
-    try {
-        let { item, unitPrice, image_url } = await prisma.stock.findFirst({})
-        unitPrice = parseInt(unitPrice * 100) // Convert to cents
+    const preference = new Preference(client)
 
-        const session = await stripe.checkout.sessions.create({
-            mode: 'payment',
-            payment_method_types: ['card', 'boleto'],
-
-            line_items: [{
-                price_data: {
-                    currency: 'brl',
-                    product_data: {
-                        name: item,
-                        images: [image_url]
-                    },
-                    unit_amount: unitPrice
-                },
-                quantity: req.body.item.quantity
-            }],
-
-            success_url: `${server_url}/shopping/success`,
-            cancel_url: `${server_url}/shopping/cancel`
-        })
-        res.json({ url: session.url })
-    }
-    catch (error) {
-        console.error(error)
-        res.status(500).json({ error: 'Internal Server Error' })
-    }
+    preference.create({
+        body: {
+            items: [
+                {
+                    title: 'Meu produto',
+                    quantity: 1,
+                    unit_price: 25
+                }
+            ],
+            back_urls: {
+                success: `${server_url}/shopping/success`,
+                pending: `${server_url}/shopping/pending`,
+                failure: `${server_url}/shopping/cancel`,
+            }
+        }
+    })
+    .then (response => res.json(response.init_point))
+    .catch (error => res.status(500).json({ error: error.message}))
 })
 
 app.post('/shopping/register', async (req,res) => {
@@ -68,6 +59,7 @@ app.post('/shopping/register', async (req,res) => {
                     platform: 'PC',
                     quantity: req.body.purchase.quantity,
                     value: value,
+                    method: req.body.payment_method,
                     status: 'success',
                     date: new Date(),
         
@@ -176,8 +168,8 @@ app.get('/user/:id', async (req,res) => {
             where: {
                 id: req.params.id
             },
-            select: {
-                nick: true,
+            include: {
+                password: false,
                 shopping: {
                     select: {
                         id: true,
@@ -199,19 +191,27 @@ app.get('/user/:id', async (req,res) => {
 
 app.put('/user/:id', async (req,res) => {
     try {
-        await prisma.user.update({
-            where: {
-                id: req.params.id
-            },
-            data: {
-                nick: req.body.nick
-            }
-        })
+        const updateData = {};
+        if (req.body.nick) {
+            updateData.nick = req.body.nick;
+        }
+        if (req.body.phone) {
+            updateData.phone = req.body.phone;
+        }
 
-        res.status(200).send()
-    }
-    catch {
-        res.status(500).send()
+        if (Object.keys(updateData).length > 0) {
+            await prisma.user.update({
+                where: {
+                    id: req.params.id
+                },
+                data: updateData
+            });
+            res.status(200).send();
+        } else {
+            res.status(400).send('No valid fields to update');
+        }
+    } catch {
+        res.status(500).send();
     }
 })
 

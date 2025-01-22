@@ -8,29 +8,34 @@ datasource db {
 }
 
 model User {
-  id       String     @id @default(auto()) @map("_id") @db.ObjectId
-  email    String     @unique
-  password String
-  name     String
-  nick     String
-  shopping Shopping[]
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  email       String      @unique
+  password    String
+  name        String
+  nick        String
+  phone       String      @default("")
+  banner_url  String      @default("")
+  avatar_url  String      @default("")
+  admin       Boolean     @default(false)
+  shopping    Shopping[]
 }
 
 model Stock {
-  id       String     @id @default(auto()) @map("_id") @db.ObjectId
-  item     String     @unique
-  unitPrice Float     @default(0)
-  quantity Int
-  image_url String    @default("")
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  item        String      @unique
+  unitPrice   Float       @default(0)
+  quantity    Int
+  image_url   String      @default("")
 }
 
 model Shopping {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
-  buyer    User   @relation(fields: [buyer_id], references: [id])
-  buyer_id String @db.ObjectId
-  platform String
-  quantity Int
-  value    Float  @default(0)
-  status   String
-  date     DateTime @default("2021-08-01T00:00:00.000Z")
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  buyer       User        @relation(fields: [buyer_id], references: [id])
+  buyer_id    String      @db.ObjectId
+  platform    String
+  quantity    Int
+  value       Float       @default(0)
+  method      String?
+  status      String
+  date        DateTime    @default("2021-08-01T00:00:00.000Z")
 }
